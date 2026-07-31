@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user onboarding information and preferences.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "User's full name" },
+        "jobTitle": { "type": "string", "description": "User's job title" },
+        "email": { "type": "string", "description": "User's email address" },
+        "categories": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Customizable expense categories"
+        },
+        "earningCategories": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Customizable earning categories"
+        },
+        "currency": { "type": "string", "description": "Preferred currency symbol" }
+      },
+      "required": ["name", "jobTitle", "email", "currency"]
+    },
+    "Expense": {
+      "title": "Expense Entry",
+      "description": "A single spending record.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number", "description": "Amount spent" },
+        "category": { "type": "string", "description": "Category of the expense" },
+        "date": { "type": "string", "format": "date-time", "description": "When the expense occurred" },
+        "note": { "type": "string", "description": "Optional note" }
+      },
+      "required": ["amount", "category", "date"]
+    },
+    "Earning": {
+      "title": "Earning Entry",
+      "description": "A single income record.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number", "description": "Amount earned" },
+        "category": { "type": "string", "description": "Category of the earning" },
+        "date": { "type": "string", "format": "date-time", "description": "When the earning occurred" }
+      },
+      "required": ["amount", "category", "date"]
+    },
+    "StockInvestment": {
+      "title": "Stock Investment",
+      "description": "A record of a stock purchase.",
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string", "description": "Stock ticker symbol" },
+        "investedAmount": { "type": "number", "description": "Total amount invested" },
+        "shares": { "type": "number", "description": "Number of shares owned" },
+        "purchaseDate": { "type": "string", "format": "date-time", "description": "When the stock was purchased" },
+        "currency": { "type": "string", "description": "Currency of the stock market" }
+      },
+      "required": ["symbol", "investedAmount", "shares", "purchaseDate", "currency"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "User-specific expenses"
+    },
+    "/users/{userId}/earnings/{earningId}": {
+      "schema": "Earning",
+      "description": "User-specific earnings"
+    },
+    "/users/{userId}/stocks/{stockId}": {
+      "schema": "StockInvestment",
+      "description": "User-specific stock investments"
+    }
+  }
+}

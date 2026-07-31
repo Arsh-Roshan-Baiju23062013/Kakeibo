@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (Implicit Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Proactive Verification Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity validation functions
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'jobTitle', 'email', 'currency']) &&
+             data.keys().size() <= 6 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.jobTitle is string && data.jobTitle.size() <= 200 &&
+             data.email is string && data.email.size() <= 200 && data.email == request.auth.token.email &&
+             data.currency is string && data.currency.size() <= 10 &&
+             (!("categories" in data) || (data.categories is list && data.categories.size() <= 50 && (data.categories.size() == 0 || data.categories[0] is string))) &&
+             (!("earningCategories" in data) || (data.earningCategories is list && data.earningCategories.size() <= 50 && (data.earningCategories.size() == 0 || data.earningCategories[0] is string)));
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll(['amount', 'category', 'date']) &&
+             data.keys().size() <= 5 &&
+             data.amount is number && data.amount >= 0 && data.amount <= 99999999 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.date is string && data.date.size() >= 10 && data.date.size() <= 50 &&
+             (!("note" in data) || (data.note is string && data.note.size() <= 1000));
+    }
+
+    function isValidEarning(data) {
+      return data.keys().hasAll(['amount', 'category', 'date']) &&
+             data.keys().size() <= 5 &&
+             data.amount is number && data.amount >= 0 && data.amount <= 99999999 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.date is string && data.date.size() >= 10 && data.date.size() <= 50 &&
+             (!("note" in data) || (data.note is string && data.note.size() <= 1000));
+    }
+
+    function isValidStock(data) {
+      return data.keys().hasAll(['symbol', 'investedAmount', 'shares', 'purchaseDate', 'currency']) &&
+             data.keys().size() == 5 &&
+             data.symbol is string && data.symbol.size() > 0 && data.symbol.size() <= 15 &&
+             data.symbol.matches('^[a-zA-Z0-9.\\-]+$') &&
+             data.investedAmount is number && data.investedAmount >= 0 && data.investedAmount <= 99999999 &&
+             data.shares is number && data.shares >= 0 && data.shares <= 99999999 &&
+             data.purchaseDate is string && data.purchaseDate.size() >= 10 && data.purchaseDate.size() <= 50 &&
+             data.currency is string && data.currency.size() <= 10;
+    }
+
+    // Resource Mappings with Strict Attribute Access Control
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasAny(['name', 'jobTitle', 'email', 'currency', 'categories', 'earningCategories'])
+      );
+
+      match /expenses/{expenseId} {
+        allow get: if isOwner(userId) && isValidId(expenseId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(expenseId) && isValidExpense(incoming());
+        allow update: if isOwner(userId) && isValidId(expenseId) && isValidExpense(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasAny(['amount', 'category', 'date', 'note'])
+        );
+        allow delete: if isOwner(userId) && isValidId(expenseId);
+      }
+
+      match /earnings/{earningId} {
+        allow get: if isOwner(userId) && isValidId(earningId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(earningId) && isValidEarning(incoming());
+        allow update: if isOwner(userId) && isValidId(earningId) && isValidEarning(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasAny(['amount', 'category', 'date', 'note'])
+        );
+        allow delete: if isOwner(userId) && isValidId(earningId);
+      }
+
+      match /stocks/{stockId} {
+        allow get: if isOwner(userId) && isValidId(stockId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(stockId) && isValidStock(incoming());
+        allow update: if isOwner(userId) && isValidId(stockId) && isValidStock(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasAny(['symbol', 'investedAmount', 'shares', 'purchaseDate', 'currency'])
+        );
+        allow delete: if isOwner(userId) && isValidId(stockId);
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Times New Roman", "Georgia", serif;
+  --color-neon-green: #39FF14;
+  --color-neon-green-glow: rgba(57, 255, 20, 0.5);
+}
+
+@layer base {
+  body {
+    @apply bg-black text-neon-green font-serif selection:bg-neon-green selection:text-black;
+  }
+}
+
+@layer components {
+  .neon-border {
+    @apply border border-neon-green shadow-[0_0_10px_var(--color-neon-green-glow)];
+  }
+  
+  .neon-text-glow {
+    @apply text-neon-green drop-shadow-[0_0_8px_var(--color-neon-green-glow)];
+  }
+
+  .neon-button {
+    @apply px-6 py-3 border-2 border-neon-green text-neon-green font-bold uppercase tracking-widest 
+           hover:bg-neon-green hover:text-black transition-all duration-300
+           shadow-[0_0_15px_var(--color-neon-green-glow)] hover:shadow-[0_0_30px_var(--color-neon-green)];
+  }
+
+  .neon-input {
+    @apply bg-transparent border-b-2 border-neon-green p-2 outline-none focus:shadow-[0_4px_10px_-5px_var(--color-neon-green-glow)]
+           placeholder:text-neon-green/30;
+  }
+}
+
